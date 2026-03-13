@@ -1,4 +1,6 @@
-import React from 'react';
+'use client';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   MapPin, 
   Ruler, 
@@ -11,9 +13,91 @@ import {
   Package
 } from 'lucide-react';
 
+// Componente para o efeito visual de contagem animada
+function AnimatedCounter({ end, prefix = "+", suffix = "", text }: { end: number, prefix?: string, suffix?: string, text: string }) {
+  const [count, setCount] = useState(0);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // Quando o elemento aparecer na tela, a animação começa
+        if (entry.isIntersecting) {
+          let start = 0;
+          const duration = 2000; // 2 segundos de duração da contagem
+          const increment = end / (duration / 16); 
+
+          const timer = setInterval(() => {
+            start += increment;
+            if (start >= end) {
+              setCount(end);
+              clearInterval(timer);
+            } else {
+              setCount(Math.ceil(start));
+            }
+          }, 16);
+
+          observer.disconnect(); // Garante que conte apenas na primeira vez que rolar a página
+        }
+      },
+      { threshold: 0.5 } // Ativa quando 50% do componente estiver visível
+    );
+
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, [end]);
+
+  return (
+    <div ref={ref} className="flex flex-col items-center justify-center p-6 border border-[#666666]/10 rounded-2xl bg-slate-50 hover:shadow-lg transition-shadow">
+      <span className="text-4xl md:text-5xl font-black text-[#003366] mb-2">
+        {prefix}{count}{suffix}
+      </span>
+      <span className="text-[#666666] font-medium uppercase tracking-wider text-xs sm:text-sm text-center">
+        {text}
+      </span>
+    </div>
+  );
+}
+
 export default function LandingPage() {
-  const whatsappNumber = "5500999999999"; // Substitua pelo número real
+  const whatsappNumber = "5585996563400"; 
   const whatsappLink = `https://wa.me/${whatsappNumber}`;
+
+  const [statusEnvio, setStatusEnvio] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setStatusEnvio('loading');
+
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch('https://formsubmit.co/ajax/dm.levantamentos@gmail.com', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          nome: formData.get('nome'),
+          email: formData.get('email'),
+          mensagem: formData.get('mensagem'),
+          _subject: `Novo contato pelo site de: ${formData.get('nome')}` 
+        })
+      });
+
+      if (response.ok) {
+        setStatusEnvio('success');
+        form.reset(); 
+      } else {
+        setStatusEnvio('error');
+      }
+    } catch (error) {
+      console.error(error);
+      setStatusEnvio('error');
+    }
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
@@ -27,9 +111,9 @@ export default function LandingPage() {
                 <img 
                   src="/logog.png" 
                   alt="DM Levantamentos Topográficos" 
-                  width={200} // Ajuste este valor conforme necessário
-                  height={60} // Ajuste este valor conforme necessário
-                  className="h-16 w-auto object-contain" // h-16 define a altura visual, w-auto mantém a proporção
+                  width={200}
+                  height={60}
+                  className="h-16 w-auto object-contain" 
                 />
               </a>
             </div>
@@ -67,7 +151,6 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
-        {/* Background Decorativo */}
         <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-[#003366]/10 hidden lg:block rounded-bl-[100px]" />
       </section>
 
@@ -117,22 +200,23 @@ export default function LandingPage() {
           <div className="lg:w-1/2 relative">
              <div className="aspect-video bg-[#002244] rounded-2xl overflow-hidden flex items-center justify-center border border-[#004488]">
               <img src="/work.png" alt="Equipe DM Levantamentos ou Drone" className="object-cover w-full h-full opacity-80" />
-                
              </div>
           </div>
         </div>
       </section>
 
-      {/* --- CLIENTES --- */}
-      <section className="py-20 bg-white border-b border-[#666666]/20">
+      {/* --- NOVA SEÇÃO DE RESULTADOS (CONTADORES ANIMADOS) --- */}
+      <section className="py-24 bg-white border-b border-[#666666]/20">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p className="text-[#666666] font-medium mb-10 italic">Empresas que confiam na nossa precisão</p>
-          <div className="flex flex-wrap justify-center gap-12 opacity-50 grayscale">
-            {/* Logos fictícios ou reais */}
-            <span className="text-2xl font-black text-[#666666]">CONSTRUTORA X</span>
-            <span className="text-2xl font-black text-[#666666]">AGRO BRASIL</span>
-            <span className="text-2xl font-black text-[#666666]">LOGÍSTICA S.A</span>
-            <span className="text-2xl font-black text-[#666666]">URBANISMO PRO</span>
+          <h2 className="text-[#003366] font-bold tracking-widest uppercase text-sm mb-4">Nossa Trajetória</h2>
+          <p className="text-3xl md:text-4xl font-bold text-slate-900 mb-16">Inúmeros serviços realizados com máxima precisão</p>
+
+          {/* Grid de números com animação. Ajuste os valores ('end') conforme a realidade da empresa */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
+            <AnimatedCounter end={150} text="Projetos Entregues" />
+            <AnimatedCounter end={5} text="Anos de Experiência" />
+            <AnimatedCounter end={1500} suffix=" ha" text="Área Mapeada" />
+            <AnimatedCounter end={200} text="Clientes Atendidos" />
           </div>
         </div>
       </section>
@@ -145,28 +229,64 @@ export default function LandingPage() {
               <h3 className="text-2xl font-bold mb-6">Informações de Contato</h3>
               <div className="space-y-8">
                 <div className="flex items-center gap-4">
-                  <Phone size={24} /> <span>(00) 99999-9999</span>
+                  <Phone size={24} /> <span>(85) 99656-3400</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Mail size={24} /> <span>contato@dmtopografia.com.br</span>
+                  <Mail size={24} /> <span>dm.levantamentos@gmail.com</span>
                 </div>
                 <div className="flex items-center gap-4">
-                  <MapPin size={24} /> <span>Sua Cidade - Estado</span>
+                  <MapPin size={24} /> <span>Fortaleza - CE</span>
                 </div>
               </div>
             </div>
             <div className="md:w-2/3 p-12">
               <h3 className="text-2xl font-bold mb-6 text-slate-800">Mande uma mensagem</h3>
-              <form className="space-y-4">
+              
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
-                  <input type="text" placeholder="Seu Nome" className="p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" />
-                  <input type="email" placeholder="Seu E-mail" className="p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" />
+                  <input 
+                    type="text" 
+                    name="nome"
+                    required
+                    placeholder="Seu Nome" 
+                    className="p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" 
+                  />
+                  <input 
+                    type="email" 
+                    name="email"
+                    required
+                    placeholder="Seu E-mail" 
+                    className="p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" 
+                  />
                 </div>
-                <textarea placeholder="Como podemos ajudar no seu projeto?" rows={4} className="w-full p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" />
-                <button className="w-full bg-[#003366] text-white py-4 rounded-lg font-bold hover:bg-[#002244] transition">
-                  Enviar Mensagem
+                <textarea 
+                  name="mensagem"
+                  required
+                  placeholder="Como podemos ajudar no seu projeto?" 
+                  rows={4} 
+                  className="w-full p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" 
+                />
+                
+                <button 
+                  type="submit"
+                  disabled={statusEnvio === 'loading'}
+                  className="w-full bg-[#003366] text-white py-4 rounded-lg font-bold hover:bg-[#002244] transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {statusEnvio === 'loading' ? 'Enviando...' : 'Enviar Mensagem'}
                 </button>
+
+                {statusEnvio === 'success' && (
+                  <p className="text-green-600 font-medium text-center mt-2">
+                    Mensagem enviada com sucesso!
+                  </p>
+                )}
+                {statusEnvio === 'error' && (
+                  <p className="text-red-600 font-medium text-center mt-2">
+                    Erro ao enviar a mensagem. Por favor, tente pelo WhatsApp.
+                  </p>
+                )}
               </form>
+              
             </div>
           </div>
         </div>
