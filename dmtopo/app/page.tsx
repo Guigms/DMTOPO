@@ -258,6 +258,13 @@ export default function LandingPage() {
                     placeholder="Seu E-mail" 
                     className="p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" 
                   />
+                  <input 
+                    type="number" 
+                    name="number"
+                    required
+                    placeholder="Seu Telefone" 
+                    className="p-3 border border-[#666666]/30 rounded-lg outline-[#003366]" 
+                  />
                 </div>
                 <textarea 
                   name="mensagem"
